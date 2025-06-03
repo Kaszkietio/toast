@@ -8,6 +8,16 @@ function App() {
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:8000/ws/traffic");
+    socket.onopen = () => {
+      console.log("WebSocket connection established");
+      socket.send("get_graph");
+    }
+
+    const interval = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send("get_graph");
+      }
+    }, 1000);
 
     socket.onmessage = (event) => {
       const incoming = JSON.parse(event.data);
@@ -21,8 +31,8 @@ function App() {
           ...newNode,
           x: oldNode?.x,
           y: oldNode?.y,
-          vx: oldNode?.vx,
-          vy: oldNode?.vy,
+          fx: oldNode?.x,
+          fy: oldNode?.y,
         };
       });
 
@@ -44,7 +54,10 @@ function App() {
       console.log("graphData state:", graphData);
     };
 
-    return () => socket.close();
+    return () => {
+      clearInterval(interval);
+      socket.close()
+    };
   }, []);
 
   return (
