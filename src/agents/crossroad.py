@@ -15,11 +15,17 @@ class CrossroadAgent(Agent):
         super().__init__(model)
         self.unique_id = unique_id
 
+        print(f"[{self.unique_id}] Initializing CrossroadAgent with {len(incoming_edges)} incoming edges and {len(outgoing_edges)} outgoing edges")
+
         self.incoming_roads = {edge.source: 0 for edge in incoming_edges}  # Incoming neighbor agent ID -> number of cars
+        # print(f"[{self.unique_id}] Incoming roads: {self.incoming_roads}")
         self.outgoing_roads = [edge.target for edge in outgoing_edges] # Outgoing neighbor agent IDs
+        # print(f"[{self.unique_id}] Outgoing roads: {self.outgoing_roads}")
 
         self.light_durations = {edge.source: edge.light_duration for edge in incoming_edges}  # Incoming neighbor agent ID -> duration (sec)
+        # print(f"[{self.unique_id}] Light durations: {self.light_durations}")
         self.car_throughput = {edge.target: edge.throughput for edge in outgoing_edges}  # Outgoing neighbor agent ID -> cars per second
+        # print(f"[{self.unique_id}] Car throughput: {self.car_throughput}")
 
         self.green_light_index = -1  # Direction ID or name
         self.green_light_name = None  # Name of the current green light direction
@@ -29,13 +35,21 @@ class CrossroadAgent(Agent):
     def step(self, delta: float):
         cars_passed = defaultdict(int)
 
+        # if self.unique_id == 5:
+        #     print(f"[{self.unique_id}] Starting step with delta: {delta} seconds")
+
         # 1. Compute how many cars can pass through the green light
         while delta > 0.0:
             if self.green_light_time_left <= 0.0:
+                self.adjust_lights()
                 # Switch to next green light
                 self.green_light_index = (self.green_light_index + 1) % len(self.light_durations)
                 self.green_light_name = list(self.light_durations.keys())[self.green_light_index]
+                if self.unique_id == 1:
+                    print(f"[{self.unique_id}] Switching green light to index {self.green_light_index} ({self.green_light_name}:{self.light_durations[self.green_light_name]} seconds)")
                 self.green_light_time_left = self.light_durations[self.green_light_name]
+                # if self.unique_id == 5:
+                #     print(f"[{self.unique_id}] Switching green light to {self.green_light_name} for {self.green_light_time_left} seconds")
 
             passed_time = min(delta, self.green_light_time_left)
             delta -= passed_time
@@ -58,8 +72,8 @@ class CrossroadAgent(Agent):
                 neighbor_agent: CrossroadAgent = self.model.agents[road_id]
                 neighbor_agent.receive_traffic(self.unique_id, cars)
 
+        # print(f"[{self.unique_id}] Received traffic: {self.incoming_roads}")
         self.incoming_traffic = sum(self.incoming_roads.values())
-        self.adjust_lights()
 
     def receive_traffic(self, road_id: int, num_cars: int):
         self.incoming_roads[road_id] += num_cars
@@ -78,16 +92,23 @@ class CrossroadAgent(Agent):
         pass  # You can store and average neighbor data
 
     def adjust_lights(self):
-        return
+        # return
         # Simple adjustment logic (can use reinforcement learning later)
-        for src, traffic in self.incoming_roads.items():
-            if traffic > 15:
-                self.light_durations[src] += 1
-            elif traffic < 5:
-                self.light_durations[src] -= 1
+        # for src, traffic in self.incoming_roads.items():
+        if self.green_light_name is None:
+            return
+        # print(f"[{self.unique_id}] Adjusting lights for {self.green_light_name} with current traffic: {self.incoming_roads[self.green_light_name]}")
+        src = self.green_light_name
+        traffic = self.incoming_roads[src]
+        if traffic > 40:
+            self.light_durations[src] += 1
+            # print(f"[{self.unique_id}] Increasing light duration for {src} to {self.light_durations[src]} seconds due to high traffic ({traffic})")
+        elif traffic < 5:
+            self.light_durations[src] -= 1
+            # print(f"[{self.unique_id}] Decreasing light duration for {src} to {self.light_durations[src]} seconds due to low traffic ({traffic})")
 
             # Ensure light durations are within reasonable limits
-            self.light_durations[src] = min(max(1, self.light_durations[src]), 100)
+        self.light_durations[src] = min(max(1, self.light_durations[src]), 100)
 
     def get_light_status(self):
         links = []
@@ -96,6 +117,8 @@ class CrossroadAgent(Agent):
                 "source": edge,
                 "target": self.unique_id,
                 "traffic": self.incoming_roads[edge],
-                "green_light": (edge == self.green_light_name)
+                "green_light": (edge == self.green_light_name),
+                "light_duration": self.light_durations[edge],
+                "throughput": self.model.agents[edge].car_throughput[self.unique_id]
             })
         return links

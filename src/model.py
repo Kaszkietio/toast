@@ -34,6 +34,8 @@ class TrafficModel(Model):
                 agent = CrossroadAgent(node, self, self.incoming_edges[node], self.graph[node])
             self.agents.add(agent)
 
+        print(f"Initialized TrafficModel with {self.num_agents} agents.")
+
         # self.datacollector = DataCollector(
         #     model_reporters={"AvgTraffic": self.compute_avg_traffic}
         # )
@@ -49,6 +51,7 @@ class TrafficModel(Model):
         nodes = self.nodes
         links = []
         for agent in self.agents:
+            agent: CrossroadAgent
             links.extend(agent.get_light_status())
 
         return nodes, links

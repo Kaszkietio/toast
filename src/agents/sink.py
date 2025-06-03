@@ -25,6 +25,13 @@ class SinkAgent(CrossroadAgent):
     def step(self, delta: float):
         # Just consume all incoming cars
         for src in self.incoming_roads:
-            cars_received = min(ceil(int(self.rate * delta)), self.incoming_roads[src])
+            throughput = self.model.agents[src].car_throughput[self.unique_id]
+            cars_received = min(int(ceil(throughput * delta)), self.incoming_roads[src])
             self.total_received += cars_received
             self.incoming_roads[src] -= cars_received
+
+    def get_light_status(self):
+        links = super().get_light_status()
+        for link in links:
+            link["green_light"] = True  # Sink does not control lights
+        return links

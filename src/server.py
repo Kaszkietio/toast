@@ -30,6 +30,8 @@ class Link(BaseModel):
     target: int
     traffic: int
     green_light: bool
+    light_duration: float
+    throughput: float
 
 class GraphData(BaseModel):
     nodes: List[Node]
@@ -40,7 +42,7 @@ class GraphData(BaseModel):
 nodes=list(range(6))  # Example crossroads
 roads = {
     0: [Edge(0, 1, random.normalvariate(20, 1.5), 5.0),
-        Edge(0, 2, random.normalvariate(20, 1.5), 5.0),
+        Edge(0, 2, random.normalvariate(20, 1.5), 1.0),
     ],
     1: [
         # Edge(1, 2, random.normalvariate(20, 1.5), 5.0),
@@ -58,7 +60,7 @@ roads = {
     5: [],
 }
 
-traffic_model = TrafficModel(nodes, roads, 0, 5.0, 5, 5.0)  # Adjust parameters as needed
+traffic_model = TrafficModel(nodes, roads, 0, 20.0, 5, 20.0)  # Adjust parameters as needed
 graph_lock = threading.Lock()
 graph_snapshot: Optional[GraphData] = None
 
@@ -91,8 +93,8 @@ async def traffic_graph_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         print("WebSocket disconnected")
     except Exception as e:
-        print(f"WebSocket error: {e}")
         await websocket.close()
+        raise e
 
 
 def get_traffic_graph():
@@ -100,6 +102,7 @@ def get_traffic_graph():
     # traffic_model.step()
 
     nodes, links = traffic_model.get_traffic_update()
+    # print([link. for link in links])
 
     nodes = [Node(id=node_id) for node_id in nodes]
     links = [

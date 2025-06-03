@@ -29,7 +29,7 @@ class SourceAgent(CrossroadAgent):
         random.shuffle(self.outgoing_roads)
         for edge in self.outgoing_roads:
             throughput = self.car_throughput[edge]
-            new_cars = ceil(int(throughput * self.rate * delta))
+            new_cars = ceil(int(self.rate * delta))
             cars_passed[edge] += new_cars
 
         # Send cars to neighbors
