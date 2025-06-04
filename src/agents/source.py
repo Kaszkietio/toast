@@ -36,3 +36,6 @@ class SourceAgent(CrossroadAgent):
         for road_id, cars in cars_passed.items():
             neighbor_agent = self.model.agents[road_id]
             neighbor_agent.receive_traffic(self.unique_id, cars)
+
+    def change_light(self):
+        return
