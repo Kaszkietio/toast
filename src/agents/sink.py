@@ -35,3 +35,6 @@ class SinkAgent(CrossroadAgent):
         for link in links:
             link["green_light"] = True  # Sink does not control lights
         return links
+
+    def is_light_green_for(self, road_id: int) -> bool:
+        return True

@@ -113,6 +113,29 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  const [ambulancePriority, setAmbulancePriority] = useState(true);
+  const [adaptiveLights, setAdaptiveLights] = useState(true);
+
+  const toggleSpecialVehicleCompliance = async () => {
+    const newState = !ambulancePriority;
+    setAmbulancePriority(newState);
+    await fetch("http://localhost:8000/config/ambulance_priority", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newState),
+    });
+  };
+
+  const toggleAdaptiveLights = async () => {
+    const newState = !adaptiveLights;
+    setAdaptiveLights(newState);
+    await fetch("http://localhost:8000/config/adaptive_lights", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newState),
+    });
+  };
+
 
   return (
     <div style={{ display: 'flex', height: '100vh', padding: '20px'}}>
@@ -145,7 +168,17 @@ function App() {
         </BarChart>
       </div>
       <div style={{ flex: 1 }}>
-        <button onClick={spawnAmbulance}>🚑 Spawn Ambulance</button>
+        <button onClick={spawnAmbulance}>🚑 Spawn Special Vehicle</button>
+        <div style={{ display: 'flex', gap: '2rem', marginBottom: '1rem' }}>
+        <label>
+          <input type="checkbox" checked={ambulancePriority} onChange={toggleSpecialVehicleCompliance} />
+          🚑 Special Vehicle Light Priority
+        </label>
+        <label>
+          <input type="checkbox" checked={adaptiveLights} onChange={toggleAdaptiveLights} />
+          💡 Adaptive Traffic Lights
+        </label>
+      </div>
 
 
         <ForceGraph2D
@@ -166,8 +199,10 @@ function App() {
             ` Throughput: ${Number(link.throughput).toFixed(2)}` +
             (link.special_vehicle != null ? ` Time left: ${Number(link.special_vehicle.time_left).toFixed(2)}` : '')}
           linkColor={(link) => {
-            const t = link.traffic || 0;
-            return t > 80 ? "red" : t > 40 ? "orange" : t > 0 ? "green" : "black";
+            let traffic = link.traffic;
+            let throughput = link.throughput;
+            const t = throughput == 0.0 ? parseFloat('inf') : (traffic / throughput);
+            return t > 4 ? "red" : t > 2 ? "orange" : t > 0 ? "green" : "black";
           }}
           // nodeAutoColorBy="id"
           linkDirectionalParticles={link => link.green_light ? 1 : 0}

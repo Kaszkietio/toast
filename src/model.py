@@ -27,6 +27,7 @@ class TrafficModel(Model):
         self.websocket = None  # Placeholder for WebSocket connection
         self.current_time = 0.0
         self.finished_special_vehicles = []
+
         self.special_vehicle_policy = special_vehicle_policy
         self.adjust_lights_policy = adjust_lights_policy
 
@@ -148,3 +149,10 @@ class TrafficModel(Model):
         x = self.finished_special_vehicles
         self.finished_special_vehicles = []
         return x
+
+    def set_adaptive_lights(self, enabled: bool):
+        self.adjust_lights_policy = lambda: enabled
+
+
+    def set_special_vehical_compliance(self, enabled: bool):
+        self.special_vehicle_policy = lambda: enabled

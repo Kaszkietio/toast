@@ -1,6 +1,6 @@
 import asyncio
 import threading
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
@@ -67,7 +67,7 @@ roads = {
 }
 
 traffic_model = TrafficModel(nodes, roads, 0, 20.0, 5, 20.0)  # Adjust parameters as needed
-traffic_model.add_special_vehicle()
+# traffic_model.add_special_vehicle()
 graph_lock = threading.Lock()
 graph_snapshot: Optional[GraphData] = None
 
@@ -127,6 +127,18 @@ def get_metrics():
         "AverageTraffic": df["AverageTraffic"].iloc[-1].item(),
         "SpecialVehicles": special_vehicles,
     }
+
+
+@app.post("/config/adaptive_lights")
+def set_adaptive_lights(enabled: bool = Body(...)):
+    traffic_model.set_adaptive_lights(enabled)
+    return {"status": "ok", "adaptive_lights": enabled}
+
+
+@app.post("/config/ambulance_priority")
+def set_ambulance_priority(enabled: bool = Body(...)):
+    traffic_model.set_special_vehical_compliance(enabled)
+    return {"status": "ok", "ambulance_priority": enabled}
 
 
 def get_traffic_graph():

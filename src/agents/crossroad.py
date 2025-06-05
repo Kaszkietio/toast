@@ -90,7 +90,8 @@ class CrossroadAgent(Agent):
             neighbor.receive_traffic_info(self.unique_id, self.incoming_traffic)
 
     def adjust_lights(self):
-        # return
+        if not self.model.adjust_lights_policy():
+            return
         # Simple adjustment logic (can use reinforcement learning later)
         # for src, traffic in self.incoming_roads.items():
         if self.green_light_name is None:
@@ -145,7 +146,6 @@ class CrossroadAgent(Agent):
 
 
     def override_light_for(self, road_id: int):
-        # TODO: check policy for overriding
         if self.model.special_vehicle_policy():
             self.light_cycle = self.green_light_name
             self.change_light(road_id)

@@ -38,6 +38,7 @@ class SpecialVehicleAgent(Agent):
                 else:
                     # Wait for the green light
                     self.time_passed += delta
+                    self.time_left_to_next -= delta*0.1
                     return
 
             passed_time = min(delta, self.time_left_to_next)
@@ -67,8 +68,10 @@ class SpecialVehicleAgent(Agent):
         throughput = prev_crossroad.car_throughput[next_node_id]
         traffic = next_crossroad.get_traffic(current_node_id)
         road_length = next_crossroad.get_road_length(current_node_id)
-        self.time_left_to_next = road_length * (0.5 + 0.5 * traffic / throughput) \
+
+        self.time_left_to_next = road_length * (0.5 + 0.5 * 0.25 * traffic / throughput) \
                                     if throughput > 0 else float('inf')
+
         print(f"[{self.unique_id}] Time left to next node {next_node_id}: {self.time_left_to_next:.2f} seconds")
 
 
