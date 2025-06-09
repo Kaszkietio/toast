@@ -24,11 +24,15 @@ class SourceAgent(CrossroadAgent):
 
     def step(self, delta: float):
         cars_passed = defaultdict(int)
+        self.check_outgoing_accidents(delta)
 
         # Generate new cars to send through each outgoing edge
         random.shuffle(self.outgoing_roads)
         for edge in self.outgoing_roads:
-            throughput = self.car_throughput[edge]
+            if edge in self.outgoing_accidents:
+                # If there is an accident on this road, skip it
+                print(f"[{self.unique_id}] Skipping road {edge} due to accident, time left: {self.outgoing_accidents[edge]['time_left']:.2f} seconds")
+                continue
             new_cars = ceil(int(self.rate * delta))
             cars_passed[edge] += new_cars
 

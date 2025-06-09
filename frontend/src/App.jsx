@@ -96,7 +96,7 @@ function App() {
         {
         Time: Number(json.Time).toFixed(2), // Convert time to a fixed decimal
         TotalTraffic: Number(json.TotalTraffic).toFixed(2), // Convert total traffic to a fixed decimal
-        AverageTraffic: Number(json.AverageTraffic).toFixed(2), // Convert average traffic to a fixed decimal
+        // AverageTraffic: Number(json.AverageTraffic).toFixed(2), // Convert average traffic to a fixed decimal
       }]
       special_vehicles = [...special_vehicles, // Keep previous special vehicles
         ...(json.SpecialVehicles || [])
@@ -136,19 +136,25 @@ function App() {
     });
   };
 
+  const saveMetrics = async () => {
+    await fetch("http://localhost:8000/save/metrics", { method: "POST"});
+  };
+
+  const car_accident = (link) => {
+    fetch("http://localhost:8000/simulate-accident", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source: link.source.id, target: link.target.id }),
+    }).then(() => {
+      console.log(`Accident triggered on link ${link.source.id} -> ${link.target.id}`);
+    })
+  }
+
 
   return (
     <div style={{ display: 'flex', height: '100vh', padding: '20px'}}>
       <div style={{ flex: 1, padding: 0 }}>
         <h3>Traffic & Waiting Cars</h3>
-        <LineChart width={600} height={300} data={data}>
-          <CartesianGrid stroke="#ccc" />
-          <XAxis dataKey="Time" />
-          <YAxis />
-          <Tooltip />
-          <Line type="monotone" dataKey="AverageTraffic" stroke="#82ca9d" name="Avg Waiting Cars" />
-          <Legend layout="vertical" verticalAlign="top" align="right" />
-        </LineChart>
         <LineChart width={600} height={300} data={data}>
           <CartesianGrid stroke="#ccc" />
           <XAxis dataKey="Time" />
@@ -168,7 +174,9 @@ function App() {
         </BarChart>
       </div>
       <div style={{ flex: 1 }}>
-        <button onClick={spawnAmbulance}>🚑 Spawn Special Vehicle</button>
+        <button onClick={spawnAmbulance} style={{ padding: '10px'}}>🚑 Spawn Special Vehicle</button>
+
+        <button onClick={saveMetrics} style={{ padding: '10px'}}>💾 Save Metrics</button>
         <div style={{ display: 'flex', gap: '2rem', marginBottom: '1rem' }}>
         <label>
           <input type="checkbox" checked={ambulancePriority} onChange={toggleSpecialVehicleCompliance} />
@@ -179,8 +187,6 @@ function App() {
           💡 Adaptive Traffic Lights
         </label>
       </div>
-
-
         <ForceGraph2D
           ref={fgRef}
           graphData={graphData}
@@ -232,6 +238,7 @@ function App() {
           linkLineDash={link => (link.special_vehicle != null ? [2, 2] : [])}
           linkDirectionalArrowLength={5}
           linkDirectionalArrowRelPos={1}
+          onLinkClick={car_accident}
         />
       </div>
     </div>

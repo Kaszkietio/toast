@@ -1,13 +1,16 @@
 import asyncio
-import threading
+from datetime import datetime
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Body
 from fastapi.middleware.cors import CORSMiddleware
+import os
 from pydantic import BaseModel
+import random
+import threading
 from typing import Optional
-from typing import List, Dict
+from typing import List
+
 from model import TrafficModel  # Import your Mesa model
 from agents.edge import Edge  # Import your Edge class
-import random
 
 random.seed(42)
 
@@ -124,7 +127,7 @@ def get_metrics():
     return {
         "Time": last_metrics_time,
         "TotalTraffic":df["TotalTraffic"].iloc[-1].item(),
-        "AverageTraffic": df["AverageTraffic"].iloc[-1].item(),
+        # "AverageTraffic": df["AverageTraffic"].iloc[-1].item(),
         "SpecialVehicles": special_vehicles,
     }
 
@@ -140,13 +143,28 @@ def set_ambulance_priority(enabled: bool = Body(...)):
     traffic_model.set_special_vehical_compliance(enabled)
     return {"status": "ok", "ambulance_priority": enabled}
 
+@app.post("/save/metrics")
+def save_metrics():
+    df = traffic_model.datacollector.get_model_vars_dataframe()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    dir_path = os.path.join(__file__, "..", "metrics")
+    os.makedirs(dir_path, exist_ok=True)
+    df.to_csv(os.path.join(dir_path, f"{timestamp}.csv"))
+    return {"status": "ok", "file": f"metrics_{timestamp}.csv"}
+
+
+@app.post("/simulate-accident")
+async def simulate_accident(link: dict):
+    source, target = link.get("source"), link.get("target")
+    traffic_model.simulate_accident(source, target)
+    return {"status": "ok", "message": f"Accident simulated on link {source} -> {target}"}
+
 
 def get_traffic_graph():
     # Step the model once or return current state
     # traffic_model.step()
 
     nodes, links = traffic_model.get_traffic_update()
-    # print([link. for link in links])
 
     nodes = [Node(id=node_id) for node_id in nodes]
     links = [

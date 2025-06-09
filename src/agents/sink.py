@@ -23,6 +23,8 @@ class SinkAgent(CrossroadAgent):
         self.total_received = 0
 
     def step(self, delta: float):
+        self.check_incoming_accidents(delta)
+
         # Just consume all incoming cars
         for src in self.incoming_roads:
             throughput = self.model.agents[src].car_throughput[self.unique_id]

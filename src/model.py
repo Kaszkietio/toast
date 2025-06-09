@@ -156,3 +156,8 @@ class TrafficModel(Model):
 
     def set_special_vehical_compliance(self, enabled: bool):
         self.special_vehicle_policy = lambda: enabled
+
+
+    def simulate_accident(self, source: int, target: int):
+        self.agents[source].accident_on_outgoing_road(target)
+        self.agents[target].accident_on_incoming_road(source)
