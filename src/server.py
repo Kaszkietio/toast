@@ -160,6 +160,12 @@ async def simulate_accident(link: dict):
     return {"status": "ok", "message": f"Accident simulated on link {source} -> {target}"}
 
 
+@app.post("/config/accurate_special_vehicle_route")
+def set_ambulance_priority(enabled: bool = Body(...)):
+    traffic_model.set_special_vehicle_route_accuracy(enabled)
+    return {"status": "ok", "route_accuracy": enabled}
+
+
 def get_traffic_graph():
     # Step the model once or return current state
     # traffic_model.step()

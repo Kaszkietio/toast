@@ -16,7 +16,8 @@ class TrafficModel(Model):
                  source: int, source_rate: float,
                  sink: int, sink_rate: float, seed=42,
                  special_vehicle_policy=lambda: True,
-                 adjust_lights_policy=lambda: True):
+                 adjust_lights_policy=lambda: True,
+                 accurate_special_vehicle_route=True):
         super().__init__(seed=seed)
         self.num_agents = len(nodes)
         self.nodes = nodes
@@ -30,6 +31,8 @@ class TrafficModel(Model):
 
         self.special_vehicle_policy = special_vehicle_policy
         self.adjust_lights_policy = adjust_lights_policy
+
+        self.accurate_special_vehicle_route = accurate_special_vehicle_route
 
         self.incoming_edges = {node: [] for node in self.nodes}
         for node, edges in self.graph.items():
@@ -111,7 +114,13 @@ class TrafficModel(Model):
     def add_special_vehicle(self):
         unique_id = -self.special_vehicles
         self.special_vehicles += 1
-        vehicle = SpecialVehicleAgent(unique_id, self, self.find_random_path(self.source, self.sink))
+
+        if self.accurate_special_vehicle_route:
+            time, route = self.agents[self.source].get_time_to_reach_dest()
+            print(f"Adding special vehicle {unique_id} with accurate route: {route} and time: {time:.2f} seconds")
+        else:
+            route = self.find_random_path(self.source, self.sink)
+        vehicle = SpecialVehicleAgent(unique_id, self, route)
         self.agents.add(vehicle)
 
     def find_random_path(self, source, sink):
@@ -161,3 +170,13 @@ class TrafficModel(Model):
     def simulate_accident(self, source: int, target: int):
         self.agents[source].accident_on_outgoing_road(target)
         self.agents[target].accident_on_incoming_road(source)
+
+
+    def get_time_to_pass_road(self, road_length: float, traffic: float, throughput: float) -> float:
+        return road_length * (0.5 + 0.5 * 0.25 * traffic / throughput) \
+                                    if throughput > 0 else float('inf')
+
+
+    def set_special_vehicle_route_accuracy(self, enabled: bool):
+        self.accurate_special_vehicle_route = enabled
+        print(f"Special vehicle route accuracy set to {enabled}")

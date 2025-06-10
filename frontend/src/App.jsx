@@ -113,9 +113,8 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const [ambulancePriority, setAmbulancePriority] = useState(true);
-  const [adaptiveLights, setAdaptiveLights] = useState(true);
 
+  const [ambulancePriority, setAmbulancePriority] = useState(true);
   const toggleSpecialVehicleCompliance = async () => {
     const newState = !ambulancePriority;
     setAmbulancePriority(newState);
@@ -126,6 +125,7 @@ function App() {
     });
   };
 
+  const [adaptiveLights, setAdaptiveLights] = useState(true);
   const toggleAdaptiveLights = async () => {
     const newState = !adaptiveLights;
     setAdaptiveLights(newState);
@@ -135,6 +135,17 @@ function App() {
       body: JSON.stringify(newState),
     });
   };
+
+  const [specialRoute, setSpecialRouteAccuracy] = useState(true);
+  const toggleSpecialRoute = async () => {
+    const newState = !specialRoute;
+    setSpecialRouteAccuracy(newState);
+    await fetch("http://localhost:8000/config/accurate_special_vehicle_route", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newState),
+    });
+  }
 
   const saveMetrics = async () => {
     await fetch("http://localhost:8000/save/metrics", { method: "POST"});
@@ -185,6 +196,10 @@ function App() {
         <label>
           <input type="checkbox" checked={adaptiveLights} onChange={toggleAdaptiveLights} />
           💡 Adaptive Traffic Lights
+        </label>
+        <label>
+          <input type="checkbox" checked={specialRoute} onChange={toggleSpecialRoute} />
+          💡 Accurate special vehicle route
         </label>
       </div>
         <ForceGraph2D

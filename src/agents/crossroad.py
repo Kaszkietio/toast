@@ -85,10 +85,10 @@ class CrossroadAgent(Agent):
             if cars > 0:
                 neighbor_agent: CrossroadAgent = self.model.agents[road_id]
                 neighbor_agent.receive_traffic(self.unique_id, cars)
-                print(f"[{self.unique_id}] Passing {cars} cars to neighbor {road_id}")
+                # print(f"[{self.unique_id}] Passing {cars} cars to neighbor {road_id}")
                 neighbor_agent.receive_traffic(self.unique_id, additional_cars_per_road)
-                if additional_cars_per_road > 0:
-                    print(f"[{self.unique_id}] Passing additional {additional_cars_per_road} cars to neighbor {road_id}")
+                # if additional_cars_per_road > 0:
+                #     print(f"[{self.unique_id}] Passing additional {additional_cars_per_road} cars to neighbor {road_id}")
 
 
         self.incoming_traffic = sum(self.incoming_roads.values())
@@ -161,10 +161,12 @@ class CrossroadAgent(Agent):
 
 
     def change_light(self, road_id: int | None = None):
+        print(f"[{self.unique_id}] Changing light for road {road_id} (current green: {self.green_light_name})")
         if road_id is None:
             self.green_light_index = (self.green_light_index + 1) % len(self.light_durations)
         else:
             self.green_light_index = list(self.light_durations.keys()).index(road_id)
+        print(f"\t[{self.unique_id}] New green light index: {self.green_light_index}")
         self.green_light_name = list(self.light_durations.keys())[self.green_light_index]
         self.green_light_time_left = self.light_durations[self.green_light_name]
 
@@ -220,3 +222,23 @@ class CrossroadAgent(Agent):
             if self.incoming_accidents[road_id]["time_left"] <= 0:
                 self.light_durations[road_id] = self.initial_light_durations[road_id]
                 self.incoming_accidents.pop(road_id)
+
+
+    def get_time_to_reach_dest(self) -> tuple[float, list[int]]:
+        print(f"[{self.unique_id}] Getting time to reach destination")
+        best_route = []
+        best_time = float('inf')
+        for neighbor_id in self.outgoing_roads:
+            throughput = self.get_throughput(neighbor_id)
+            neighbor: CrossroadAgent = self.model.agents[neighbor_id]
+            traffic = neighbor.get_traffic(self.unique_id)
+            road_length = neighbor.get_road_length(self.unique_id)
+            additional_time = self.model.get_time_to_pass_road(road_length, traffic, throughput)
+            cur_time, cur_route = neighbor.get_time_to_reach_dest()
+            cur_time += additional_time
+            if cur_time < best_time:
+                best_time = cur_time
+                best_route = [self.unique_id] + cur_route
+
+        print(f"[{self.unique_id}] Best route: {best_route} with time: {best_time:.2f} seconds")
+        return (best_time, best_route)

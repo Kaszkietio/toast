@@ -69,8 +69,11 @@ class SpecialVehicleAgent(Agent):
         traffic = next_crossroad.get_traffic(current_node_id)
         road_length = next_crossroad.get_road_length(current_node_id)
 
-        self.time_left_to_next = road_length * (0.5 + 0.5 * 0.25 * traffic / throughput) \
-                                    if throughput > 0 else float('inf')
+        self.time_left_to_next = self.model.get_time_to_pass_road(
+            throughput=throughput,
+            traffic=traffic,
+            road_length=road_length
+        )
 
         print(f"[{self.unique_id}] Time left to next node {next_node_id}: {self.time_left_to_next:.2f} seconds")
 

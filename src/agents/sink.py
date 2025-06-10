@@ -22,6 +22,7 @@ class SinkAgent(CrossroadAgent):
         self.rate = rate
         self.total_received = 0
 
+
     def step(self, delta: float):
         self.check_incoming_accidents(delta)
 
@@ -32,11 +33,19 @@ class SinkAgent(CrossroadAgent):
             self.total_received += cars_received
             self.incoming_roads[src] -= cars_received
 
+
     def get_light_status(self):
         links = super().get_light_status()
         for link in links:
             link["green_light"] = True  # Sink does not control lights
         return links
 
+
     def is_light_green_for(self, road_id: int) -> bool:
         return True
+
+
+    def get_time_to_reach_dest(self) -> tuple[float, list[int]]:
+        print(f"[{self.unique_id}] Sink is destination, returning 0 time.")
+        # Sink does not have a destination, so return 0
+        return (0.0, [])
