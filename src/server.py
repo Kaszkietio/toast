@@ -11,6 +11,7 @@ from typing import List
 
 from model import TrafficModel  # Import your Mesa model
 from agents.edge import Edge  # Import your Edge class
+from graph import get_big_graph, get_small_graph, get_mid_graph  # Import your graph generation function
 
 random.seed(42)
 
@@ -45,31 +46,25 @@ class Link(BaseModel):
 class GraphData(BaseModel):
     nodes: List[Node]
     links: List[Link]
+    sources: List[int]
+    sinks: List[int]
 
 # Initialize the Mesa traffic model
 
-nodes=list(range(6))  # Example crossroads
-roads = {
-    0: [Edge(0, 1, random.normalvariate(20, 1.5), 5.0, 10.0),
-        Edge(0, 2, random.normalvariate(20, 1.5), 5.0, 5.0),
-    ],
-    1: [
-        # Edge(1, 2, random.normalvariate(20, 1.5), 5.0),
-        Edge(1, 3, random.normalvariate(20, 1.5), 5.0, 5.0)
-    ],
-    2: [Edge(2, 3, random.normalvariate(20, 1.5), 5.0, 10.0),
-        Edge(2, 1, 5.0, 5.0, 3.0)
-    ],
-    3: [Edge(3, 4, random.normalvariate(20, 1.5), 5.0, 3.0),
-        Edge(3, 5, random.normalvariate(20, 1.5), 5.0, 6.0)
-    ],
-    4: [Edge(4, 5, random.normalvariate(20, 1.5), 5.0, 3.0),
-        # Edge(4, 3, random.normalvariate(20, 1.5), 5.0)
-    ],
-    5: [],
-}
+# nodes, roads = get_big_graph()
+# nodes, roads = get_small_graph()
+# traffic_model = TrafficModel(nodes, roads, 0, 20.0, len(nodes) - 1, 20.0)  # Adjust parameters as needed
 
-traffic_model = TrafficModel(nodes, roads, 0, 20.0, 5, 20.0)  # Adjust parameters as needed
+
+# Stable presentation
+# nodes, roads, sources, sinks = get_mid_graph()
+# traffic_model = TrafficModel(nodes, roads, sources, 17.5, sinks, 17.5)  # Adjust parameters as needed
+
+
+# No adapitve
+nodes, roads, sources, sinks = get_mid_graph()
+traffic_model = TrafficModel(nodes, roads, sources, 25.0, sinks, 25.0, adjust_lights_policy=lambda: True)  # Adjust parameters as needed
+
 # traffic_model.add_special_vehicle()
 graph_lock = threading.Lock()
 graph_snapshot: Optional[GraphData] = None
@@ -127,7 +122,7 @@ def get_metrics():
     return {
         "Time": last_metrics_time,
         "TotalTraffic":df["TotalTraffic"].iloc[-1].item(),
-        # "AverageTraffic": df["AverageTraffic"].iloc[-1].item(),
+        "AverageWaitingTime": df["AverageWaitingTime"].iloc[-1].item(),
         "SpecialVehicles": special_vehicles,
     }
 
@@ -203,7 +198,7 @@ def get_traffic_graph():
 
     # print("Graph data prepared with nodes:", nodes, "and links:", links)
 
-    return GraphData(nodes=nodes, links=links)
+    return GraphData(nodes=nodes, links=links, sources=traffic_model.sources, sinks=traffic_model.sinks)
 
 if __name__ == "__main__":
     import uvicorn

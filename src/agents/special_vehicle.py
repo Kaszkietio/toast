@@ -24,27 +24,29 @@ class SpecialVehicleAgent(Agent):
         while delta > 0.0:
             print(f"[{self.unique_id}] Time left to next: {self.time_left_to_next:.2f} seconds")
             if self.time_left_to_next <= 0.0:
-                if self.is_green_light():
-                    # Inform the current crossroad that the vehicle is passing
-                    current_node_id = self.path[self.current_index]
-                    current_node: CrossroadAgent = self.model.agents[current_node_id]
-                    current_node.return_to_light_cycle()
+                # Inform the current crossroad that the vehicle is passing
+                current_node_id = self.path[self.current_index]
+                current_node: CrossroadAgent = self.model.agents[current_node_id]
+                current_node.return_to_light_cycle()
 
-                    # Move to the next node
-                    self.move_to_next_node()
-                    if self.current_index == len(self.path) - 1:
-                        break
-                    self.request_light_override() # Request override light for the next node
-                else:
-                    # Wait for the green light
-                    self.time_passed += delta
-                    self.time_left_to_next -= delta*0.1
-                    return
+                # Move to the next node
+                self.move_to_next_node()
+                if self.current_index == len(self.path) - 1:
+                    break
 
-            passed_time = min(delta, self.time_left_to_next)
-            delta -= passed_time
-            self.time_passed += passed_time
-            self.time_left_to_next -= passed_time
+                self.request_light_override() # Request override light for the next node
+
+            if self.is_green_light():
+                passed_time = min(delta, self.time_left_to_next)
+                delta -= passed_time
+                self.time_passed += passed_time
+                self.time_left_to_next -= passed_time
+            else:
+                # Wait for the green light
+                self.time_passed += delta
+                self.time_left_to_next -= delta*0.1
+                return
+
 
         if self.current_index == len(self.path)  - 1:
             print(f"[{self.unique_id}] Reached destination at {self.path[-1]} after {self.time_passed:.2f} seconds")

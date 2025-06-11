@@ -13,8 +13,8 @@ from agents.special_vehicle import SpecialVehicleAgent
 
 class TrafficModel(Model):
     def __init__(self, nodes: list[int], links: dict[int, list[Edge]],
-                 source: int, source_rate: float,
-                 sink: int, sink_rate: float, seed=42,
+                 sources: list[int], source_rate: float,
+                 sinks: list[int], sink_rate: float, seed=42,
                  special_vehicle_policy=lambda: True,
                  adjust_lights_policy=lambda: True,
                  accurate_special_vehicle_route=True):
@@ -23,8 +23,8 @@ class TrafficModel(Model):
         self.nodes = nodes
         self.graph = links
         self.special_vehicles = 0
-        self.source = source
-        self.sink = sink
+        self.sources = sources
+        self.sinks = sinks
         self.websocket = None  # Placeholder for WebSocket connection
         self.current_time = 0.0
         self.finished_special_vehicles = []
@@ -40,10 +40,10 @@ class TrafficModel(Model):
                 self.incoming_edges[edge.target].append(edge)
 
         for node in self.nodes:
-            if node == source:
+            if node in sources:
                 # Create a source agent
                 agent = SourceAgent(node, self, source_rate, self.graph[node])
-            elif node == sink:
+            elif node in sinks:
                 # Create a sink agent
                 agent = SinkAgent(node, self, sink_rate, self.incoming_edges[node])
             else:
@@ -59,6 +59,7 @@ class TrafficModel(Model):
                 "TotalTraffic": self.compute_total_traffic,
                 "AverageTraffic": self.compute_avg_traffic,
                 "SpecialVehicles": self.process_finished_special_vehicles,
+                "AverageWaitingTime": self.compute_avg_waiting_time,
             }
         )
 
@@ -115,11 +116,15 @@ class TrafficModel(Model):
         unique_id = -self.special_vehicles
         self.special_vehicles += 1
 
+        source = random.choice(self.sources)
+        sink = random.choice(self.sinks)
+        print(f"Adding special vehicle with unique ID: {unique_id} from source {source} to sink {sink}")
+
         if self.accurate_special_vehicle_route:
-            time, route = self.agents[self.source].get_time_to_reach_dest()
+            time, route = self.agents[source].get_time_to_reach_dest(-1, sink, [])
             print(f"Adding special vehicle {unique_id} with accurate route: {route} and time: {time:.2f} seconds")
         else:
-            route = self.find_random_path(self.source, self.sink)
+            route = self.find_random_path(source, sink)
         vehicle = SpecialVehicleAgent(unique_id, self, route)
         self.agents.add(vehicle)
 
@@ -153,6 +158,22 @@ class TrafficModel(Model):
         total = [(agent.get_total_traffic(), len(agent.incoming_roads)) for agent in self.agents if isinstance(agent, CrossroadAgent)]
         averages = [traffic / count if count > 0 else 0 for traffic, count in total]
         return sum(averages) / len(averages) if len(averages) > 0 else 0
+
+    def compute_avg_waiting_time(self):
+        times = []
+        traffics = []
+        for node, roades in self.graph.items():
+            for edge in roades:
+                start: CrossroadAgent = self.agents[edge.source]
+                end: CrossroadAgent = self.agents[edge.target]
+                throughput = start.get_throughput(end.unique_id)
+                traffic = end.get_traffic(start.unique_id)
+                road_length = end.get_road_length(start.unique_id)
+                time = self.get_time_to_pass_road(road_length, traffic, throughput)
+                times.append(time)
+                traffics.append(traffic)
+
+        return sum([time * traffic for time, traffic in zip(times, traffics)]) / sum(traffics) if sum(traffics) > 0 else 0
 
     def process_finished_special_vehicles(self):
         x = self.finished_special_vehicles

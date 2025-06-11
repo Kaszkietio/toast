@@ -6,6 +6,7 @@ function App() {
   const fgRef = useRef();
   let nodes = []
   let links = [];
+  const [sources, setSources] = useState({ sources: [], sinks: [] });
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
 
   useEffect(() => {
@@ -23,13 +24,12 @@ function App() {
 
     socket.onmessage = (event) => {
       const incoming = JSON.parse(event.data);
-      // if (incoming["event"] !== undefined) {
-      //   console.log("Event received:", incoming);
-      // }
-      // console.log("Received data:", incoming.special_vehicle);
-
-      // Attempt to access old nodes
       const existingNodes = nodes.length ? nodes : [];
+
+      setSources({
+        sources: incoming.sources || [],
+        sinks: incoming.sinks || []
+      });
 
       const mergedNodes = incoming.nodes.map((newNode) => {
         const oldNode = existingNodes.find((n) => n.id === newNode.id);
@@ -96,8 +96,10 @@ function App() {
         {
         Time: Number(json.Time).toFixed(2), // Convert time to a fixed decimal
         TotalTraffic: Number(json.TotalTraffic).toFixed(2), // Convert total traffic to a fixed decimal
+        AverageWaitingTime: Number(json.AverageWaitingTime).toFixed(2), // Convert average waiting time to a fixed decimal
         // AverageTraffic: Number(json.AverageTraffic).toFixed(2), // Convert average traffic to a fixed decimal
       }]
+      currentData = currentData.slice(-20); // Keep only the last 100 entries
       special_vehicles = [...special_vehicles, // Keep previous special vehicles
         ...(json.SpecialVehicles || [])
       ]
@@ -165,13 +167,22 @@ function App() {
   return (
     <div style={{ display: 'flex', height: '100vh', padding: '20px'}}>
       <div style={{ flex: 1, padding: 0 }}>
-        <h3>Traffic & Waiting Cars</h3>
+        <h2>🚗 Current Vehicles in City: {data.length > 0 ? data[data.length - 1].TotalTraffic : "N/A"}</h2>
         <LineChart width={600} height={300} data={data}>
           <CartesianGrid stroke="#ccc" />
           <XAxis dataKey="Time" />
           <YAxis />
           <Tooltip />
           <Line type="linear" dataKey="TotalTraffic" stroke="#8884d8" name="Total Traffic" />
+          <Legend layout="vertical" verticalAlign="top" align="right" />
+        </LineChart>
+        <h2>Average waiting time in City: {data.length > 0 ? data[data.length - 1].AverageWaitingTime : "N/A"}</h2>
+        <LineChart width={600} height={300} data={data}>
+          <CartesianGrid stroke="#ccc" />
+          <XAxis dataKey="Time" />
+          <YAxis />
+          <Tooltip />
+          <Line type="linear" dataKey="AverageWaitingTime" stroke="#CCCCCC" name="Average waiting time" />
           <Legend layout="vertical" verticalAlign="top" align="right" />
         </LineChart>
         <h3>Ambulance Travel Times</h3>
@@ -207,10 +218,10 @@ function App() {
           graphData={graphData}
           nodeLabel={(node) => `Crossroad: ${node.id}`}
           nodeColor={(node) => {
-            if (node.id == '0') {
+            if (sources.sources.find(s => s == node.id) != undefined) {
               return 'red';
             }
-            if (node.id == '5') {
+            if (sources.sinks.find(s => s == node.id) != undefined) {
               return 'blue';
             }
             return 'lightgray';

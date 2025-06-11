@@ -59,6 +59,9 @@ class CrossroadAgent(Agent):
             self.check_outgoing_accidents(passed_time)
             self.check_incoming_accidents(passed_time)
 
+            if len(self.outgoing_roads) == len(self.outgoing_accidents):
+                return
+
             # 2. Calculate how many cars can pass
             random.shuffle(self.outgoing_roads)
             for road_id in self.outgoing_roads:
@@ -224,17 +227,23 @@ class CrossroadAgent(Agent):
                 self.incoming_accidents.pop(road_id)
 
 
-    def get_time_to_reach_dest(self) -> tuple[float, list[int]]:
+    def get_time_to_reach_dest(self, prev: int, dest: int, route: list[int]) -> tuple[float, list[int]]:
+        if self.unique_id in route:
+            print(f"[{self.unique_id}] Already visited in route, returning infinite time")
+            return (float('inf'), [])
         print(f"[{self.unique_id}] Getting time to reach destination")
         best_route = []
         best_time = float('inf')
         for neighbor_id in self.outgoing_roads:
+            if neighbor_id == prev:
+                continue
+            print(f"[{self.unique_id}] Checking neighbor {neighbor_id} for best route")
             throughput = self.get_throughput(neighbor_id)
             neighbor: CrossroadAgent = self.model.agents[neighbor_id]
             traffic = neighbor.get_traffic(self.unique_id)
             road_length = neighbor.get_road_length(self.unique_id)
             additional_time = self.model.get_time_to_pass_road(road_length, traffic, throughput)
-            cur_time, cur_route = neighbor.get_time_to_reach_dest()
+            cur_time, cur_route = neighbor.get_time_to_reach_dest(self.unique_id, dest, route + [self.unique_id])
             cur_time += additional_time
             if cur_time < best_time:
                 best_time = cur_time

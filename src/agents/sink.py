@@ -45,7 +45,11 @@ class SinkAgent(CrossroadAgent):
         return True
 
 
-    def get_time_to_reach_dest(self) -> tuple[float, list[int]]:
-        print(f"[{self.unique_id}] Sink is destination, returning 0 time.")
-        # Sink does not have a destination, so return 0
-        return (0.0, [])
+    def get_time_to_reach_dest(self, prev: int, dest: int, cur_route: list[int]) -> tuple[float, list[int]]:
+        if self.unique_id == dest:
+            # If the sink is the destination, return 0 time
+            print(f"[{self.unique_id}] Sink is destination, returning 0 time.")
+            return (0.0, [self.unique_id])
+        print(f"[{self.unique_id}] Sink is destination, returning {float('inf')} time.")
+        return (float('inf'), [])
+        # Sink does not
