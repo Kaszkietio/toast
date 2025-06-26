@@ -9,9 +9,8 @@ import threading
 from typing import Optional
 from typing import List
 
-from model import TrafficModel  # Import your Mesa model
-from agents.edge import Edge  # Import your Edge class
-from graph import get_big_graph, get_small_graph, get_mid_graph  # Import your graph generation function
+from model import TrafficModel
+from graph import get_mid_graph
 
 random.seed(42)
 
@@ -49,23 +48,12 @@ class GraphData(BaseModel):
     sources: List[int]
     sinks: List[int]
 
-# Initialize the Mesa traffic model
-
-# nodes, roads = get_big_graph()
-# nodes, roads = get_small_graph()
-# traffic_model = TrafficModel(nodes, roads, 0, 20.0, len(nodes) - 1, 20.0)  # Adjust parameters as needed
-
 
 # Stable presentation
-# nodes, roads, sources, sinks = get_mid_graph()
-# traffic_model = TrafficModel(nodes, roads, sources, 17.5, sinks, 17.5)  # Adjust parameters as needed
-
-
-# No adapitve
 nodes, roads, sources, sinks = get_mid_graph()
-traffic_model = TrafficModel(nodes, roads, sources, 25.0, sinks, 25.0, adjust_lights_policy=lambda: True)  # Adjust parameters as needed
+traffic_model = TrafficModel(nodes, roads, sources, 17.5, sinks, 17.5)  # Adjust parameters as needed
 
-# traffic_model.add_special_vehicle()
+
 graph_lock = threading.Lock()
 graph_snapshot: Optional[GraphData] = None
 
@@ -162,9 +150,6 @@ def set_ambulance_priority(enabled: bool = Body(...)):
 
 
 def get_traffic_graph():
-    # Step the model once or return current state
-    # traffic_model.step()
-
     nodes, links = traffic_model.get_traffic_update()
 
     nodes = [Node(id=node_id) for node_id in nodes]
@@ -172,31 +157,6 @@ def get_traffic_graph():
         Link(**edge)
         for edge in links
     ]
-    # Extract nodes and links from the model
-    # crossroads = traffic_model.get_crossroads()  # List of IDs
-    # roads = traffic_model.get_roads()  # List of dicts with source, target, traffic
-
-    # crossroads = list(range(6))
-    # roads = {
-    #     0: [(1, random.randint(0, 20), bool(random.randint(0, 1))), (2, random.randint(0, 20),bool(random.randint(0, 1)))],
-    #     1: [(2, random.randint(0, 20), bool(random.randint(0, 1))), (3, random.randint(0, 20),bool(random.randint(0, 1)))],
-    #     2: [(3, random.randint(0, 20), bool(random.randint(0, 1))), (1, random.randint(0, 20),bool(random.randint(0, 1)))],
-    #     3: [(4, random.randint(0, 20), bool(random.randint(0, 1))), (5, random.randint(0, 20),bool(random.randint(0, 1)))],
-    #     4: [(5, random.randint(0, 20), bool(random.randint(0, 1))), (3, random.randint(0, 20),bool(random.randint(0, 1)))],
-    #     5: [],
-    # }
-
-    # nodes = [Node(id=cr_id) for cr_id in crossroads]
-    # links = []
-    # for source, neighbors in roads.items():
-    #     if not neighbors:
-    #         continue
-    #     # Ensure neighbors are unique and sorted by traffic
-    #     cur_links = [Link(source=source, target=neighbor[0], traffic=neighbor[1], green_light=neighbor[2]) for neighbor in neighbors]
-    #     links.extend(cur_links)
-    # links = [Link(source=source, target=neighbor[0], traffic=neighbor[1]) for source, neighbor in roads.items()]
-
-    # print("Graph data prepared with nodes:", nodes, "and links:", links)
 
     return GraphData(nodes=nodes, links=links, sources=traffic_model.sources, sinks=traffic_model.sinks)
 

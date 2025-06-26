@@ -1,7 +1,6 @@
 import random
 from mesa import Model
 from mesa.datacollection import DataCollector
-from pydantic import BaseModel
 import json
 
 from agents.crossroad import CrossroadAgent

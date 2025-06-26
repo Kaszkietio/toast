@@ -19,27 +19,35 @@ class CrossroadAgent(Agent):
 
         print(f"[{self.unique_id}] Initializing CrossroadAgent with {len(incoming_edges)} incoming edges and {len(outgoing_edges)} outgoing edges")
 
-        self.incoming_roads = {edge.source: 0 for edge in incoming_edges}  # Incoming neighbor agent ID -> number of cars
-        self.incoming_roads_lengths = {edge.source: edge.length for edge in incoming_edges}  # Incoming neighbor agent ID -> road length
-        # print(f"[{self.unique_id}] Incoming roads: {self.incoming_roads}")
-        self.outgoing_roads = [edge.target for edge in outgoing_edges] # Outgoing neighbor agent IDs
-        # print(f"[{self.unique_id}] Outgoing roads: {self.outgoing_roads}")
+        # Incoming neighbor agent ID -> number of cars
+        self.incoming_roads = {edge.source: 0 for edge in incoming_edges}
+        # Incoming neighbor agent ID -> road length
+        self.incoming_roads_lengths = {edge.source: edge.length for edge in incoming_edges}
+        # Outgoing neighbor agent IDs
+        self.outgoing_roads = [edge.target for edge in outgoing_edges]
 
-        self.light_durations = {edge.source: edge.light_duration for edge in incoming_edges}  # Incoming neighbor agent ID -> duration (sec)
-        self.initial_light_durations = self.light_durations.copy()  # Incoming neighbor agent ID -> initial duration (sec)
-        # print(f"[{self.unique_id}] Light durations: {self.light_durations}")
-        self.car_throughput = {edge.target: edge.throughput for edge in outgoing_edges}  # Outgoing neighbor agent ID -> cars per second
-        # print(f"[{self.unique_id}] Car throughput: {self.car_throughput}")
+        # Incoming neighbor agent ID -> duration (sec)
+        self.light_durations = {edge.source: edge.light_duration for edge in incoming_edges}
+        # Incoming neighbor agent ID -> initial duration (sec)
+        self.initial_light_durations = self.light_durations.copy()
+        # Outgoing neighbor agent ID -> cars per second
+        self.car_throughput = {edge.target: edge.throughput for edge in outgoing_edges}
 
-        self.green_light_index = -1  # Direction ID or name
-        self.green_light_name = None  # Name of the current green light direction
-        self.green_light_time_left = 0  # Time left for green light
+        # Direction ID or name
+        self.green_light_index = -1
+        # Name of the current green light direction
+        self.green_light_name = None
+        # Time left for green light
+        self.green_light_time_left = 0
         self.change_light()
 
-        self.light_cycle = None  # Used for special vehicles to override the light cycle
+        # Used for special vehicles to override the light cycle
+        self.light_cycle = None
 
-        self.outgoing_accidents = {}  # Outgoing road ID -> number of cars waiting due to accidents
-        self.incoming_accidents = {}  # Incoming road ID -> number of cars waiting due to accidents
+        # Outgoing road ID -> number of cars waiting due to accidents
+        self.outgoing_accidents = {}
+        # Incoming road ID -> number of cars waiting due to accidents
+        self.incoming_accidents = {}
 
     def step(self, delta: float):
         cars_passed = defaultdict(int)
@@ -88,10 +96,7 @@ class CrossroadAgent(Agent):
             if cars > 0:
                 neighbor_agent: CrossroadAgent = self.model.agents[road_id]
                 neighbor_agent.receive_traffic(self.unique_id, cars)
-                # print(f"[{self.unique_id}] Passing {cars} cars to neighbor {road_id}")
                 neighbor_agent.receive_traffic(self.unique_id, additional_cars_per_road)
-                # if additional_cars_per_road > 0:
-                #     print(f"[{self.unique_id}] Passing additional {additional_cars_per_road} cars to neighbor {road_id}")
 
 
         self.incoming_traffic = sum(self.incoming_roads.values())
@@ -111,10 +116,8 @@ class CrossroadAgent(Agent):
         if not self.model.adjust_lights_policy():
             return
         # Simple adjustment logic (can use reinforcement learning later)
-        # for src, traffic in self.incoming_roads.items():
         if self.green_light_name is None:
             return
-        # print(f"[{self.unique_id}] Adjusting lights for {self.green_light_name} with current traffic: {self.incoming_roads[self.green_light_name]}")
         for src in self.incoming_roads:
             if src == self.green_light_name:
                 continue
@@ -124,10 +127,8 @@ class CrossroadAgent(Agent):
             traffic = self.incoming_roads[src]
             if traffic > 80:
                 self.light_durations[src] += (traffic - 80) / 20.0 * 0.01 + 0.01
-                # print(f"[{self.unique_id}] Increasing light duration for {src} to {self.light_durations[src]} seconds due to high traffic ({traffic})")
             elif traffic < 20:
                 self.light_durations[src] -= (20 - traffic) / 10 * (0.1 - 0.01) + 0.01
-                # print(f"[{self.unique_id}] Decreasing light duration for {src} to {self.light_durations[src]} seconds due to low traffic ({traffic})")
 
                 # Ensure light durations are within reasonable limits
             self.light_durations[src] = min(max(1, self.light_durations[src]), 100)
@@ -178,8 +179,10 @@ class CrossroadAgent(Agent):
         if self.model.special_vehicle_policy():
             self.light_cycle = self.green_light_name
             self.change_light(road_id)
-            self.green_light_time_left = float('inf')  # Override light to be green indefinitely
-            print(f"1###############[{self.unique_id}] SWITCHED green light: {self.green_light_name}:{self.green_light_time_left} seconds left")
+            # Override light to be green indefinitely
+            self.green_light_time_left = float('inf')
+            print(f"1###############[{self.unique_id}] SWITCHED green light: "\
+                  f"{self.green_light_name}:{self.green_light_time_left} seconds left")
 
 
     def return_to_light_cycle(self):
@@ -187,12 +190,15 @@ class CrossroadAgent(Agent):
             print(f"[{self.unique_id}] Returning to light cycle: {self.light_cycle}")
             self.change_light(self.light_cycle)
             self.light_cycle = None
-            print(f"2###############[{self.unique_id}] SWITCHED green light: {self.green_light_name}:{self.green_light_time_left} seconds left")
+            print(f"2###############[{self.unique_id}] SWITCHED green light: "\
+                  f"{self.green_light_name}:{self.green_light_time_left} seconds left")
 
 
     def is_light_green_for(self, road_id: int) -> bool:
-        print(f"[{self.unique_id}] Checking if light is green for {road_id}: {self.green_light_name == road_id}")
-        print(f"[{self.unique_id}] Current green light: {self.green_light_name}:{self.green_light_time_left} seconds left")
+        print(f"[{self.unique_id}] Checking if light is green for {road_id}:"\
+               f"{self.green_light_name == road_id}")
+        print(f"[{self.unique_id}] Current green light: {self.green_light_name}:"\
+              f"{self.green_light_time_left} seconds left")
         return self.green_light_name == road_id
 
 
@@ -201,7 +207,8 @@ class CrossroadAgent(Agent):
             "time_left": ACCIDENT_DURATION,
             "throughput": self.car_throughput[road_id],
         }
-        self.car_throughput[road_id] = 0  # No cars can pass through this road
+        # No cars can pass through this road
+        self.car_throughput[road_id] = 0
 
 
     def accident_on_incoming_road(self, road_id: int):

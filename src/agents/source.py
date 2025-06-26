@@ -3,7 +3,7 @@ from math import ceil
 import random
 
 from .crossroad import CrossroadAgent
-from .edge import Edge  # Assuming you have an Edge class defined elsewhere
+from .edge import Edge
 
 class SourceAgent(CrossroadAgent):
     def __init__(
@@ -31,7 +31,8 @@ class SourceAgent(CrossroadAgent):
         for edge in self.outgoing_roads:
             if edge in self.outgoing_accidents:
                 # If there is an accident on this road, skip it
-                print(f"[{self.unique_id}] Skipping road {edge} due to accident, time left: {self.outgoing_accidents[edge]['time_left']:.2f} seconds")
+                print(f"[{self.unique_id}] Skipping road {edge} due to accident,"\
+                      f"time left: {self.outgoing_accidents[edge]['time_left']:.2f} seconds")
                 continue
             new_cars = ceil(int(self.rate * delta))
             cars_passed[edge] += new_cars

@@ -52,4 +52,3 @@ class SinkAgent(CrossroadAgent):
             return (0.0, [self.unique_id])
         print(f"[{self.unique_id}] Sink is destination, returning {float('inf')} time.")
         return (float('inf'), [])
-        # Sink does not

@@ -1,26 +1,23 @@
-import asyncio
 from mesa import Agent
-import random
 
 from .crossroad import CrossroadAgent
-
-# from ..model import TrafficModel
 
 class SpecialVehicleAgent(Agent):
     def __init__(self, unique_id: int, model, path: list[int]):
         super().__init__(model)
         self.unique_id = unique_id
-        self.path = path  # List of node (crossroad) IDs
+        # List of node (crossroad) IDs
+        self.path = path
         self.current_index = -1
-        self.time_left_to_next = 0.0  # Time left to reach the next node
-        self.time_passed = 0.0  # Total time passed since the vehicle started moving
+        # Time left to reach the next node
+        self.time_left_to_next = 0.0
+        # Total time passed since the vehicle started moving
+        self.time_passed = 0.0
         print(f"[{self.unique_id}] Initializing SpecialVehicleAgent with path: {self.path}")
         self.move_to_next_node()
         self.request_light_override()
 
     def step(self, delta: float):
-        # print(f"[{self.unique_id}] SpecialVehicleAgent stepping with delta: {delta} seconds")
-        # print(f"[{self.unique_id}] Current road: {self.path[self.current_index]} -> {self.path[self.current_index + 1]}")
         while delta > 0.0:
             print(f"[{self.unique_id}] Time left to next: {self.time_left_to_next:.2f} seconds")
             if self.time_left_to_next <= 0.0:
@@ -34,7 +31,8 @@ class SpecialVehicleAgent(Agent):
                 if self.current_index == len(self.path) - 1:
                     break
 
-                self.request_light_override() # Request override light for the next node
+                # Request override light for the next node
+                self.request_light_override()
 
             if self.is_green_light():
                 passed_time = min(delta, self.time_left_to_next)
@@ -49,8 +47,8 @@ class SpecialVehicleAgent(Agent):
 
 
         if self.current_index == len(self.path)  - 1:
-            print(f"[{self.unique_id}] Reached destination at {self.path[-1]} after {self.time_passed:.2f} seconds")
-            # self.model.agents.remove(self)
+            print(f"[{self.unique_id}] Reached destination at {self.path[-1]} "\
+                  f"after {self.time_passed:.2f} seconds")
             self.model.special_vehicle_reached_destination(self)
             return  # Reached destination
 
@@ -62,7 +60,6 @@ class SpecialVehicleAgent(Agent):
         current_node_id = self.path[self.current_index]
         next_node_id = self.path[self.current_index + 1]
 
-        # print(f"[{self.unique_id}] Moving from {current_node_id} to {next_node_id}")
         print(self.model.agents[next_node_id].incoming_roads)
 
         prev_crossroad: CrossroadAgent = self.model.agents[current_node_id]
@@ -77,7 +74,8 @@ class SpecialVehicleAgent(Agent):
             road_length=road_length
         )
 
-        print(f"[{self.unique_id}] Time left to next node {next_node_id}: {self.time_left_to_next:.2f} seconds")
+        print(f"[{self.unique_id}] Time left to next node {next_node_id}:"\
+              f" {self.time_left_to_next:.2f} seconds")
 
 
     def is_green_light(self):
